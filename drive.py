@@ -16,6 +16,8 @@ from keras.models import load_model
 import h5py
 from keras import __version__ as keras_version
 
+import tools as t
+
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
@@ -61,11 +63,14 @@ def telemetry(sid, data):
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
-        steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
+
+        proc_image_array = t.process_image(image_array)
+
+        steering_angle = float(model.predict(proc_image_array[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))
 
-        print(steering_angle, throttle)
+        print('Steering angle: {:.2f}; Throttle: {:.2f}'.format(steering_angle, throttle))
         send_control(steering_angle, throttle)
 
         # save frame
