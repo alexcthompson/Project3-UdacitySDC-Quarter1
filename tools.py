@@ -142,7 +142,8 @@ def region_of_interest(img, vertices, invert_mask=False):
 
 def process_image(image, l_threshold=142, h_threshold=233, roi=False,
                   roi_vertices=np.array([[90, 80], [90, 30], [230, 30], [230, 80]],
-                                        dtype=np.int32)):
+                                        dtype=np.int32),
+                  normalize=False):
     '''
     This is the image processing pipeline applied before submitting
     images for training as well as before submitting to the model for
@@ -166,7 +167,8 @@ def process_image(image, l_threshold=142, h_threshold=233, roi=False,
     else:
         new_image = np.dstack((image, canny))
 
-    new_image = pixel_normalization(new_image)
+    if normalize:
+        new_image = pixel_normalization(new_image)
 
     return new_image
 

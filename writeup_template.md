@@ -12,13 +12,11 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
+[original]: ./examples/original.png "Original Image"
+[cropped]: ./examples/cropped.png "Cropped"
+[canny]: ./examples/canny.png "Canny"
+[canny_exclusion]: ./examples/canny_exclusion.png "Canny with excluded ROI"
+[filtered_steering]: ./examples/filtered_steering.png "Filtered steering"
 
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -55,6 +53,7 @@ I initially replicated their network with only convolutional and dense layers, b
 Here are the layers
 
 - Cropping2D(cropping=((59, 20), (0, 0)), input_shape=(160, 320, 4))
+- Lambda(lambda x: (x / 255.0) - 0.5)
 - Convolution2D(24, 5, 5, subsample=(1, 1), border_mode='valid')
 - MaxPooling2D(pool_size=(2, 2), border_mode='valid')
 - Activation('relu')
@@ -136,7 +135,43 @@ See above!
 
 #### 3. Creation of the Training Set & Training Process
 
-See above.
+For training data processing, I tried the following, of which, I only used some in the final processing pipeline:
+
+- Cropping [Layer 0 of final model]
+- Normalization [added as Layer 1 of final model based on reviewer feedback]
+- Canny edge detection as a 4th channel [included in final image processing pipeline]
+- Canny edge detection restricted to a region of interest [not included in final pipeline]
+- Low pass filter applied to steering angles [not included in final pipeline]
+
+Let me quickly run through examples of each:
+
+##### Cropping
+
+As recommended, I excluded most of the sky, and a good portion of the bottom of the image as well. Specifically, I chopped 59 px off the top of the image and 20 off the bottom, leaving the horizontal dimensions untouched.  Here's the original followed by the cropped version:
+
+![original image][original]
+![cropped image][cropped]
+
+##### Normalization
+
+Standard, included in the model as Layer 1 now by request.  I'd show you the effect, but it would just look like a very dark image!
+
+##### Canny edge detection & Canny with ROI
+
+I realize that convolutions are very capable of edge detection, but I figured it would be worthwhile to prime the model by explicitly providing edges.  I spent some time tuning to get lower and upper thresholds for `cv2.Canny` of `142` and `233` respectively.  Here's the original followed by the final:
+
+![original image][original]
+![canny edged image][canny]
+
+I also considered excluding the pathch immediately in front of the car from the canny channel.  The reason being that edge detection was picking up the texture of the road (one downside of using the high quality graphics settings) and I thought that might be confusing to the DNN.  However, I ultimately excluded it, having faith that the middle and final layers would ignore the texture.  Here's an example:
+
+![canny with exclusion][canny_exclusion]
+
+##### Low pass filter applied to steering angles
+
+When I plotted out steering angles, I was shocked how uneven my steering was.  As a remediation for that, I tried applying a low pass filter: a 6th order Butterworth, applied in a forward pass and backward pass both 3rd order to avoid phase shift.  I experimented with various cutoff frequencies, but I did not see substantial improvements, although it was early in the model building, so I left it out. In the end, I was uncomfortable with the possibility that I might give bad guidance through this filtering to the DNN.  Here's a chart of the actual steer data vs filtered data:
+
+![filtered steering][filtered_steering]
 
 #### 4. Advanced Track!
 

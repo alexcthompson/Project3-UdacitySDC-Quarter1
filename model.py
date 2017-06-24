@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 # Keras imports
 from keras.models import Sequential
 from keras.layers import Activation, Convolution2D, Cropping2D, \
-    Dense, Dropout, Flatten, MaxPooling2D
+    Dense, Dropout, Flatten, Lambda, MaxPooling2D
 from keras.callbacks import EarlyStopping
 
 # Assemble list of available frames from data subdirectories
@@ -42,6 +42,7 @@ valid_generator = t.generator(valid, batch_size=batch_size)
 # model definition
 model = Sequential()
 model.add(Cropping2D(cropping=((59, 20), (0, 0)), input_shape=(160, 320, 4)))
+model.add(Lambda(lambda x: (x / 255.0) - 0.5))
 model.add(Convolution2D(24, 5, 5, subsample=(1, 1), border_mode='valid'))
 model.add(MaxPooling2D(pool_size=(2, 2), border_mode='valid'))
 model.add(Activation('relu'))
